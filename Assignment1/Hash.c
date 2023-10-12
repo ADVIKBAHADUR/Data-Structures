@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-
 
 #define MAX_BUFFER 256 // Maximum string length this program can handle
 #define MAX_NAME_SIZE 265 //max length of a string
@@ -20,7 +18,6 @@ typedef struct Name {
 
 void HashmapManagement(Name * myobject, Name * table[]);
 void AddNonDuplicate(Name * myobject);
-
 
 // The CSV parser
 int next_field( FILE *f, char *buf, int max ) {
@@ -53,13 +50,13 @@ int hash1(char* s){
         hash = (hash + *s - 'A') % ARRAY_SIZE;
         s++;
     }
-    return hash;
+    return abs(hash);
 }
 void addElement(Name* table[], char *name){
     struct Name* currName = (struct Name*)malloc(sizeof(struct Name));
     if (name[strlen(name)-1] == '\n'){name[strlen(name)-1] = '\0';}
     strcpy(currName->Names, name);
-    int val = hash1((name));
+    int val = hash1(name);
     //printf("before: %s : %d", currName->Names, val);
     currName->value = val;
     currName->occurences = 1;
@@ -68,20 +65,21 @@ void addElement(Name* table[], char *name){
 }
 
 struct Name *search(char *name){
-    int checkval = hash1((name));
+    if (name[strlen(name)-1] == '\n'){name[strlen(name)-1] = '\0';}
+    int checkval = hash1(name);
     //printf("After %d %s", checkval, name);
     int count = 0;
-    while(count < ARRAY_SIZE*2){
+    while(count < ARRAY_SIZE){
         if(Table[checkval] != NULL){
             //printf("%s \n", Table[checkval]->Names);
             //char tester[MAX_BUFFER] = Table[checkval]->Names;
-            int checker = (strcmp(Table[checkval]->Names, name));
+        
             //printf("Checker: %d", checker);
-            if(checker==0){
+            if((strcmp(Table[checkval]->Names, name))==0){
                 return(Table[checkval]);
             }
         }
-        ++checkval;
+        checkval++;
         count++;
 
         checkval %= ARRAY_SIZE;
@@ -89,70 +87,61 @@ struct Name *search(char *name){
     return NULL;
 }
 
-void HashmapManagement(Name * myobject, Name * table[]){
-    char myname[MAX_BUFFER];
-    strcpy(myname, myobject->Names);
-    if (myname[strlen(myname)-1] == '\n'){myname[strlen(myname)-1] = '\0';}
-    if(search(myname) == NULL){AddNonDuplicate(myobject);}
-    else{
-        for(int i = 0; i < ARRAY_SIZE; i++){
-			if(table[i] && strcmp(table[i]->Names, myname) == 0){table[i]->occurences++;}
-		}
-    }
+// Name *search(char *name)
+// { 
+//     int hash = hash1(name);
+//     int Attempt = 0;
+//     if (Table[hash] != NULL) 
+//     {
+//         for (int i = 0; i < ARRAY_SIZE; i++)
+//         {
+//             Attempt = (hash + i) % ARRAY_SIZE;
+//             if (Table[Attempt] != NULL)
+//             {
+//                 if (!strcmp(Table[Attempt]->Names, name)) 
+//                 {
+//                     return Table[Attempt];
+//                 }
+//             }
+//             else
+//                 return NULL;
+//         }
+//     }
+
+//     return NULL;
+// }
+
+// void HashmapManagement(Name * myobject, Name * table[]){
+//     char myname[MAX_BUFFER];
+//     strcpy(myname, myobject->Names);
+//     if (myname[strlen(myname)-1] == '\n'){myname[strlen(myname)-1] = '\0';}
+//     if(search(myname) == NULL){AddNonDuplicate(myobject);}
+//     else{
+//         for(int i = 0; i < ARRAY_SIZE; i++){
+// 			if(table[i] && strcmp(table[i]->Names, myname) == 0){table[i]->occurences++;}
+// 		}
+//     }
 
 
+// }
 
-    // int index = myobject->value;
-    // //printf("index: %d", index);
-    // if(table[index] == NULL){ //EMPTY SLOT
-    //     //printf("NULL");
-    //     table[index] = myobject;
-    //     num_terms++;
-    // }
+// void AddNonDuplicate(Name * myobject){
+//     char myname[MAX_BUFFER];
+//     strcpy(myname, myobject->Names);
+//     if (myname[strlen(myname)-1] == '\n'){myname[strlen(myname)-1] = '\0';}
 
-    // else{
-    //     //printf("NOTNULL");
+//     int index = hash1(myname);
 
-    //     //CHECK IF DUPLICATES FIRST:
+//     while(Table[index] != NULL){
+//         ++collisions;
+//         ++index; 
+//         index %= ARRAY_SIZE;
+//     }
+//     myobject->value = index;
+//     Table[index] = myobject;
+//     num_terms++;
 
-    //     if(strcmp(table[index]->Names,myobject->Names) == 0){
-    //         table[index]->occurences++;
-    //         //printf("\nOccurences: %s %d %d", table[index]->Names, table[index]->occurences, table[index]->value);
-    //     }
-
-    //     else{
-    //         //printf("NODUP");
-    //         while(table[index] != NULL){
-    //             collisions++;
-    //             ++index; 
-    //             index %= ARRAY_SIZE;
-    //         }
-    //         table[index] = myobject;
-    //         num_terms++;
-    //     }
-
-    // }
-
-
-}
-
-void AddNonDuplicate(Name * myobject){
-    char myname[MAX_BUFFER];
-    strcpy(myname, myobject->Names);
-    if (myname[strlen(myname)-1] == '\n'){myname[strlen(myname)-1] = '\0';}
-
-    int index = hash1(myname);
-
-    while(Table[index] != NULL){
-        collisions++;
-        ++index; 
-        index %= ARRAY_SIZE;
-    }
-    myobject->value = index;
-    Table[index] = myobject;
-    num_terms++;
-
-}
+// }
 
 int main ( int argc, char *argv[] ) {
 	FILE *f;		
@@ -177,8 +166,6 @@ int main ( int argc, char *argv[] ) {
         printf("File %s loaded\n", argv[1]);
     }
 
-	while( !next_field(f, buffer, MAX_BUFFER) ); // discard the header
-
 	// Now read and print records until the end of the file
     int counter = 0;
 	while(!feof(f)) {
@@ -194,7 +181,7 @@ int main ( int argc, char *argv[] ) {
     printf(" Capacity: %d\n", ARRAY_SIZE);
     printf(" Num Terms: %d\n", num_terms);
     printf(" Collisions: %d\n", collisions);
-    printf(" Load: %f\n", load);
+    printf(" Load: %f", load);
     //query[strcspn(query, "\n")] = 0;
 
     //printf("Query: ", query);
@@ -214,6 +201,7 @@ int main ( int argc, char *argv[] ) {
     while(sentinel != 1){
 
         fgets(query, sizeof(query), stdin);
+        //printf("Query: %s", query);
         if (query[strlen(query)-1] == '\n'){query[strlen(query)-1] = '\0';}
 
         if(strcmp(query, "quit") == 0){
@@ -223,7 +211,7 @@ int main ( int argc, char *argv[] ) {
         struct Name* freq = search(query);
         
         if(freq != NULL){
-            printf("\n>>> %s %d",freq->Names, freq->occurences);
+            printf("\n>>> %s - %d",freq->Names, freq->occurences);
         } else {
             printf("\n>>> %s - 0", query);
         }
@@ -234,4 +222,5 @@ int main ( int argc, char *argv[] ) {
 	fclose(f);
 	return EXIT_SUCCESS;
 }
+
 
