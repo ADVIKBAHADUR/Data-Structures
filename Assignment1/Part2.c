@@ -41,8 +41,10 @@ Name *createNewElement(char *AddName){
 
 int hash1(char* s){
     int hash = 0;
+    int somenum = 0;
     while(*s){
-        hash = (hash + *s - 'A') % MAX_ARRAY_SIZE;
+        somenum++;
+        hash = (((hash + *s) - 'A')*((hash + *s) - 'A')+ (somenum)*(somenum)) % MAX_ARRAY_SIZE;
         s++;
     }
     return hash;
@@ -132,7 +134,7 @@ void next_row(char *buffer, FILE *f, int max){
 
         }
     }
-    buffer[i] = '\0'; 
+    buffer[i] = '\0'; // NULL terminate the string
 }
 
 int load(char *files)

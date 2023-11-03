@@ -13,6 +13,8 @@ typedef struct Name {
     int occurences;
 
 } Name;
+
+//Declarations of functions
 int load_file(char *files);
 Name *createNewElement(char *AddName);
 int hash1(char* s);
@@ -48,6 +50,16 @@ int hash1(char* s){
     return hash;
 }
 
+int hash2(char* s){
+
+    int hash = 0;
+    while(*s){
+        hash = 1+ (hash + *s-'A') % (MAX_ARRAY_SIZE-1);
+        s++;
+    }
+    return hash;
+}
+
 struct Name *search(char *name){
     if (name[strlen(name)-1] == '\n'){name[strlen(name)-1] = '\0';}
     int checkval = hash1(name);
@@ -76,13 +88,14 @@ void insert(char *name){
     {
         Name *newName = createNewElement(name); 
         int hash = hash1(name);
-
+        int step = hash2(name);
+        int actual_place;
         terms++;
 
         for (int i = 0; i < MAX_ARRAY_SIZE; i++)
         {
-
-            int attempt = (hash + i) % MAX_ARRAY_SIZE;
+            actual_place = hash + (i*step);
+            int attempt = (actual_place) % MAX_ARRAY_SIZE;
             if (HashTable[attempt] == NULL)
             { // if empty
 
@@ -132,7 +145,7 @@ void next_row(char *buffer, FILE *f, int max){
 
         }
     }
-    buffer[i] = '\0'; 
+    buffer[i] = '\0'; // NULL terminate the string
 }
 
 int load(char *files)

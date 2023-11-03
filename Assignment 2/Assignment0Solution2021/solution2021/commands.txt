@@ -1,0 +1,10 @@
+test part 2 and 3: 
+gcc -Wall './part2&3.c' -o part2
+./part2 test_input/data_part2.csv - compare with test_output_task2.txt
+./part2 test_input/data_part3.csv- compare with test_output_task3.txt
+
+
+
+gcc -Wall './part4.c' -o part4
+./part4 test_input/pokemon.csv compare with test_output/test_output_task4.txt
+
