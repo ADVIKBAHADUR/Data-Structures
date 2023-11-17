@@ -1,107 +1,156 @@
 #include "bstdb.h"
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
-// Write your submission in this file
-//
-// A main function and some profiling tools have already been set up to test
-// your code in the task2.c file. All you need to do is fill out this file
-// with an appropriate Binary Search Tree implementation.
-//
-// The input data will be books. A book is comprised of a title and a word
-// count. You should store both these values in the tree along with a unique
-// integer ID which you will generate.
-//
-// We are aiming for speed here. A BST based database should be orders of
-// magnitude faster than a linked list implementation if the BST is written
-// correctly.
-//
-// We have provided an example implementation of what a linked list based
-// solution to this problem might look like in the db/listdb.c file. If you
-// are struggling to understand the problem or what one of the functions
-// below ought to do, consider looking at that file to see if it helps your
-// understanding.
-//
-// There are 6 functions you need to look at. Each is provided with a comment
-// which explains how it should behave. The functions are:
-//
-//  + bstdb_init
-//  + bstdb_add
-//  + bstdb_get_word_count
-//  + bstdb_get_name
-//  + bstdb_stat
-//  + bstdb_quit
-//
-// Do not rename these functions or change their arguments/return types.
-// Otherwise the profiler will not be able to find them. If you think you
-// need more functionality than what is provided by these 6 functions, you
-// may write additional functions in this file.
+#define ARRAY 120000
+const int range =240000;
+int total_insertions = 0;
+int total_tree_movements_insert = 0;
+double avg_movement = 0;
+double time_for_init = 0;
+clock_t start_time;
 
-#define MAXSTRING 256
-
-typedef struct Node{
-	char name[MAXSTRING];
+typedef struct Tree_Node{
+	struct Tree_Node *leftnode;
+    struct Tree_Node *rightnode;
+	int id;
+    char *name;
 	int wordcount;
-	char author[MAXSTRING];
-	int doc_id; 
-	Node* leftnode;
-	Node* rightnode;
-} Node;
+	char *author;
+} Tree_Node;
+void swap(int *a, int *b) {
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
+int arrindex = 0;
+int *myarray;
 
-Node * Database;
+Tree_Node *Database = NULL;
+
+void tree_delete(Tree_Node* root){
+        if (root != NULL){
+            tree_delete(root -> leftnode);
+            tree_delete(root -> rightnode);
+            free(root);
+        }
+
+    }
 
 int bstdb_init ( void ) {
-	// This function will run once (and only once) when the database first
-	// starts. Use it to allocate any memory you want to use or initialize 
-	// some globals if you need to. Function should return 1 if initialization
-	// was successful and 0 if something went wrong.
-	Database = (Node*)malloc(sizeof(struct Node));
-	char name = "";
-	int wordcount = 0;
-	char author = "";
-	int doc_id = 0; 
-	Node* leftnode = NULL;
-	Node* rightnode = NULL;
+	clock_t t = clock();
+	start_time = clock();
+	srand(time(NULL));
+	myarray = (int *)malloc(range * sizeof(int));
+
+    // Initialize the myarray with consecutive numbers
+    for (int i = 0; i < ARRAY; i++) {
+     myarray[i] = i % range;
+    }
+    // Fisher-Yates shuffle
+    for (int i = ARRAY - 1; i > 0; i--) {
+        int j = rand() % (i + 1);
+		int * myi = &myarray[i];
+		int * myj = &myarray[j];
+        swap( myi,  myj);
+    }
+
+	Database = (Tree_Node *)malloc(sizeof(Tree_Node));
+	if(Database == NULL){
+		return 0;
+	}
+	Database-> leftnode = NULL;
+	Database-> rightnode = NULL;
+	Database-> id = range/2;
+	Database-> name = NULL;
+	Database-> wordcount = 0;
+	t = clock() - t;
+	time_for_init = ((double)t)/CLOCKS_PER_SEC;
 	return 1;
 }
+void Insert_Tree_Node(Tree_Node** root, int id, char *name, int wordcount, char *author){
+    if (*root == NULL){
+		//printf("gotit");
+        *root = (Tree_Node*)malloc(sizeof(Tree_Node));
+        (*root)->id = id;
+        (*root)->leftnode = NULL;
+        (*root)->rightnode = NULL;
+		(*root)->name = name;
+        (*root)->wordcount = wordcount;
+        (*root)->author = author;
+    }
+    else if (id <= (*root)->id){
+		total_tree_movements_insert++;
+        Insert_Tree_Node(&((*root)->leftnode), id, name, wordcount, author);
+    }
+    else if (id > (*root)->id){
+		total_tree_movements_insert++;
+        Insert_Tree_Node(&((*root)->rightnode), id, name, wordcount, author);
+    }
 
-int
-bstdb_add ( char *name, int word_count, char *author ) {
-	// This function should create a new node in the binary search tree, 
-	// populate it with the name, word_count and author of the arguments and store
-	// the result in the tree.
-	//
-	// This function should also generate and return an identifier that is
-	// unique to this document. A user can find the stored data by passing
-	// this ID to one of the two search functions below.
-	//
-	// How you generate this ID is up to you, but it must be an integer. Note
-	// that this ID should also form the keys of the nodes in your BST, so
-	// try to generate them in a way that will result in a balanced tree.
-	//
-	// If something goes wrong and the data cannot be stored, this function
-	// should return -1. Otherwise it should return the ID of the new node
-	return -1;
+}
+int bstdb_add ( char *name, int word_count, char *author ) {
+
+	// Seed the random number generator
+	total_insertions++;
+	int id = myarray[arrindex];
+	arrindex++;
+    if (Database->id == range/2) {
+        Insert_Tree_Node(&Database, id, name, word_count, author);
+        return id;
+    } else{
+		return(Database->id);
+	}
+}
+Tree_Node* tree_search(Tree_Node* root, int id){
+        if (root == NULL){
+			printf(" %d ", id);
+            return NULL;
+        }
+        else{
+            if ( root -> id == id){
+                return root;
+            }
+            else{
+                if ( id < root -> id){
+                    return tree_search(root -> leftnode, id);
+                }
+                    else{
+                        return tree_search(root -> rightnode, id);
+            }
+            }
+
+            
+        }
+    }
+
+int bstdb_get_word_count ( int doc_id ) {
+
+	Tree_Node *subject = tree_search(Database, doc_id);
+	if ( subject == NULL){
+		return -1;
+	}
+	else{
+		return subject -> wordcount;
+	}
 }
 
-int
-bstdb_get_word_count ( int doc_id ) {
-	// This is a search function. It should traverse the binary search tree
-	// and return the word_count of the node with the corresponding doc_id.
-	//
-	// If the required node is not found, this function should return -1
-	return -1;
+char* bstdb_get_name ( int doc_id ) {
+
+	Tree_Node *subject = tree_search(Database, doc_id);
+	if ( subject == NULL){
+		return 0;
+
+	}
+	else{
+		return subject -> name;
+	}
+
 }
 
-char*
-bstdb_get_name ( int doc_id ) {
-	// This is a search function. It should traverse the binary search tree
-	// and return the name of the node with the corresponding doc_id.
-	//
-	// If the required node is not found, this function should return NULL or 0
-	return 0;
-}
-
-void
-bstdb_stat ( void ) {
+void bstdb_stat ( void ) {
 	// Use this function to show off! It will be called once after the 
 	// profiler ends. The profiler checks for execution time and simple errors,
 	// but you should use this function to demonstrate your own innovation.
@@ -120,11 +169,18 @@ bstdb_stat ( void ) {
 	//
 	//  + Can you prove that there are no accidental duplicate document IDs
 	//    in the tree?
+	avg_movement = total_tree_movements_insert/total_insertions;
+	clock_t duration = clock() - start_time;
+	double time_taken = ((double)duration)/CLOCKS_PER_SEC;
+	printf("STATS:\n");
+	printf("Total leaves nodes pass through before insertion: %d \n", total_tree_movements_insert);
+	printf("Average no of leaves passed through: %f \n", avg_movement);
+	printf("Time Taken for initiation function: %f seconds \n", time_for_init);
+	printf("Time Taken for total program to run: %f seconds \n", time_taken);
 }
 
 void
 bstdb_quit ( void ) {
-	// This function will run once (and only once) when the program ends. Use
-	// it to free any memory you allocated in the course of operating the
-	// database.
+
+	tree_delete(Database);
 }
